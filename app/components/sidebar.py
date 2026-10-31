@@ -113,17 +113,91 @@ def render_sidebar():
 
         faiss_ready = (settings.VECTOR_STORE_DIR / "faiss_index").exists()
         db_ready = settings.DATABASE_PATH.exists()
+        has_llm = settings.has_llm_key
+        provider_name = settings.LLM_PROVIDER.upper()
 
         status_html = f"""
         <div style="font-size: 0.75rem; color: #CBD5E1; line-height: 1.6;">
             <div>Vector Store: <span style="color: {'#34D399' if faiss_ready else '#F87171'};">● {'Indexed (FAISS)' if faiss_ready else 'Not Indexed'}</span></div>
             <div>Database: <span style="color: {'#34D399' if db_ready else '#F87171'};">● {'Online (SQLite)' if db_ready else 'Offline'}</span></div>
-            <div>LLM Model: <span style="color: #93C5FD;">{settings.LLM_MODEL}</span></div>
+            <div>LLM Provider: <span style="color: {'#34D399' if has_llm else '#FBBF24'};">● {provider_name} {'(API Active)' if has_llm else '(Grounded Fallback)'}</span></div>
+            <div>Model: <span style="color: #93C5FD;">{settings.LLM_MODEL}</span></div>
             <div>Embeddings: <span style="color: #93C5FD;">{settings.EMBEDDING_MODEL}</span></div>
-            <div>Telemetry: <span style="color: {'#34D399' if settings.has_langfuse else '#FBBF24'};">{'Langfuse Active' if settings.has_langfuse else 'Local JSONL/DB'}</span></div>
         </div>
         """
         st.markdown(status_html, unsafe_allow_html=True)
+
+        # 5. Groq / LLM API Key Settings
+        with st.expander("⚡ LLM & Groq API Key", expanded=not has_llm):
+            st.caption("Enter your Groq API key to power real-time LLM response synthesis:")
+            active_provider = st.selectbox(
+                "Provider",
+                options=["Groq", "OpenAI"],
+                index=0 if settings.LLM_PROVIDER == "groq" else 1,
+                key="sidebar_llm_provider",
+            )
+
+            if active_provider == "Groq":
+                groq_models = [
+                    "llama-3.3-70b-versatile",
+                    "llama-3.1-8b-instant",
+                    "mixtral-8x7b-32768",
+                    "gemma2-9b-it",
+                ]
+                selected_model = st.selectbox(
+                    "Model",
+                    options=groq_models,
+                    index=groq_models.index(settings.LLM_MODEL) if settings.LLM_MODEL in groq_models else 0,
+                    key="sidebar_groq_model",
+                )
+                curr_key = settings.GROQ_API_KEY or (settings.LLM_API_KEY if settings.LLM_API_KEY.startswith("gsk_") else "")
+                entered_key = st.text_input(
+                    "Groq API Key",
+                    value=curr_key,
+                    type="password",
+                    placeholder="gsk_...",
+                    key="sidebar_groq_api_key_input",
+                )
+                if st.button("💾 Apply Groq Key", use_container_width=True):
+                    if entered_key.strip():
+                        settings.update_llm_config("groq", entered_key.strip(), selected_model)
+                        # Persist to .env
+                        env_file = settings.BASE_DIR / ".env"
+                        env_file.write_text(
+                            f"LLM_PROVIDER=groq\nGROQ_API_KEY={entered_key.strip()}\nLLM_MODEL={selected_model}\n",
+                            encoding="utf-8",
+                        )
+                        st.success(f"Groq API key activated with {selected_model}!")
+                        st.rerun()
+                    else:
+                        st.warning("Please enter a valid Groq API key (starts with gsk_).")
+            else:
+                openai_models = ["gpt-4o-mini", "gpt-4o"]
+                selected_model = st.selectbox(
+                    "Model",
+                    options=openai_models,
+                    index=openai_models.index(settings.LLM_MODEL) if settings.LLM_MODEL in openai_models else 0,
+                    key="sidebar_openai_model",
+                )
+                entered_key = st.text_input(
+                    "OpenAI API Key",
+                    value=settings.LLM_API_KEY if not settings.LLM_API_KEY.startswith("gsk_") else "",
+                    type="password",
+                    placeholder="sk-...",
+                    key="sidebar_openai_key_input",
+                )
+                if st.button("💾 Apply OpenAI Key", use_container_width=True):
+                    if entered_key.strip():
+                        settings.update_llm_config("openai", entered_key.strip(), selected_model)
+                        env_file = settings.BASE_DIR / ".env"
+                        env_file.write_text(
+                            f"LLM_PROVIDER=openai\nLLM_API_KEY={entered_key.strip()}\nLLM_MODEL={selected_model}\n",
+                            encoding="utf-8",
+                        )
+                        st.success(f"OpenAI API key activated with {selected_model}!")
+                        st.rerun()
+                    else:
+                        st.warning("Please enter a valid OpenAI API key.")
 
         # Assignment Footer
         st.markdown(

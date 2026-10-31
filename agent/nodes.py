@@ -301,10 +301,44 @@ def llm_generator_node(state: AgentState) -> Dict[str, Any]:
     in_tokens = estimate_tokens(compiled_context)
     out_tokens = 0
 
-    # Check if OpenAI API key is present and configured
-    use_api = settings.has_openai_key and settings.LLM_PROVIDER in ["openai", "azure", "openrouter"]
+    # Check if Groq or OpenAI API key is present and configured
+    use_groq = settings.has_groq_key or settings.LLM_PROVIDER == "groq"
+    use_openai = settings.has_openai_key and settings.LLM_PROVIDER in ["openai", "azure", "openrouter"]
 
-    if use_api:
+    if use_groq:
+        try:
+            from langchain_groq import ChatGroq
+            groq_key = settings.GROQ_API_KEY or settings.LLM_API_KEY
+            groq_model = settings.LLM_MODEL if any(m in settings.LLM_MODEL.lower() for m in ["llama", "mixtral", "gemma", "qwen"]) else "llama-3.3-70b-versatile"
+            llm = ChatGroq(
+                model=groq_model,
+                groq_api_key=groq_key,
+                temperature=settings.LLM_TEMPERATURE,
+            )
+            messages = [
+                {"role": "system", "content": SYSTEM_ORCHESTRATOR_PROMPT + "\n\n" + RESPONSE_SYNTHESIS_PROMPT},
+                {"role": "user", "content": f"Please answer the student's question based strictly on this verified context:\n\n{compiled_context}"},
+            ]
+            response = llm.invoke(messages)
+            final_response = response.content
+
+            # Capture model-reported token usage
+            if hasattr(response, "response_metadata") and "token_usage" in response.response_metadata:
+                usage = response.response_metadata["token_usage"]
+                in_tokens = usage.get("prompt_tokens", in_tokens)
+                out_tokens = usage.get("completion_tokens", estimate_tokens(final_response))
+            elif hasattr(response, "usage_metadata") and response.usage_metadata:
+                usage = response.usage_metadata
+                in_tokens = usage.get("input_tokens", in_tokens)
+                out_tokens = usage.get("output_tokens", estimate_tokens(final_response))
+            else:
+                out_tokens = estimate_tokens(final_response)
+
+        except Exception as e:
+            logger.warning(f"Groq API call failed ({e}). Using grounded fallback generation.")
+            final_response = ""
+
+    elif use_openai:
         try:
             from langchain_openai import ChatOpenAI
             llm = ChatOpenAI(
@@ -325,6 +359,10 @@ def llm_generator_node(state: AgentState) -> Dict[str, Any]:
                 usage = response.response_metadata["token_usage"]
                 in_tokens = usage.get("prompt_tokens", in_tokens)
                 out_tokens = usage.get("completion_tokens", estimate_tokens(final_response))
+            elif hasattr(response, "usage_metadata") and response.usage_metadata:
+                usage = response.usage_metadata
+                in_tokens = usage.get("input_tokens", in_tokens)
+                out_tokens = usage.get("output_tokens", estimate_tokens(final_response))
             else:
                 out_tokens = estimate_tokens(final_response)
 

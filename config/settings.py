@@ -33,10 +33,28 @@ class Settings:
     DATABASE_URL: str = f"sqlite:///{DATABASE_PATH.as_posix()}"
     
     # LLM Settings
-    LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "openai").lower()
-    LLM_API_KEY: str = os.getenv("LLM_API_KEY", "") or os.getenv("OPENAI_API_KEY", "")
-    LLM_MODEL: str = os.getenv("LLM_MODEL", "gpt-4o-mini")
-    LLM_BASE_URL: str = os.getenv("LLM_BASE_URL", "https://api.openai.com/v1")
+    GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
+    LLM_API_KEY: str = os.getenv("LLM_API_KEY", "") or os.getenv("OPENAI_API_KEY", "") or os.getenv("GROQ_API_KEY", "")
+    
+    # Provider detection: default to groq if GROQ_API_KEY is present or LLM_API_KEY starts with gsk_
+    _env_provider = os.getenv("LLM_PROVIDER", "").lower()
+    if _env_provider:
+        LLM_PROVIDER: str = _env_provider
+    elif os.getenv("GROQ_API_KEY", "") or (os.getenv("LLM_API_KEY", "").startswith("gsk_")):
+        LLM_PROVIDER: str = "groq"
+    else:
+        LLM_PROVIDER: str = "openai"
+
+    # Default model based on provider
+    _env_model = os.getenv("LLM_MODEL", "")
+    if _env_model:
+        LLM_MODEL: str = _env_model
+    elif LLM_PROVIDER == "groq":
+        LLM_MODEL: str = "llama-3.3-70b-versatile"
+    else:
+        LLM_MODEL: str = "gpt-4o-mini"
+
+    LLM_BASE_URL: str = os.getenv("LLM_BASE_URL", "https://api.groq.com/openai/v1" if LLM_PROVIDER == "groq" else "https://api.openai.com/v1")
     LLM_TEMPERATURE: float = float(os.getenv("LLM_TEMPERATURE", "0.1"))
     
     # Embedding Settings
@@ -63,8 +81,30 @@ class Settings:
         cls.EVALUATION_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     
     @property
+    def has_groq_key(self) -> bool:
+        key = self.GROQ_API_KEY or (self.LLM_API_KEY if self.LLM_PROVIDER == "groq" or self.LLM_API_KEY.startswith("gsk_") else "")
+        return bool(key and not key.startswith("your_"))
+
+    @property
     def has_openai_key(self) -> bool:
-        return bool(self.LLM_API_KEY and not self.LLM_API_KEY.startswith("your_"))
+        return bool(self.LLM_API_KEY and not self.LLM_API_KEY.startswith("your_") and not self.LLM_API_KEY.startswith("gsk_"))
+
+    @property
+    def has_llm_key(self) -> bool:
+        return self.has_groq_key or self.has_openai_key
+
+    def update_llm_config(self, provider: str, api_key: str, model: str = ""):
+        """Dynamically update LLM provider and credentials at runtime."""
+        self.LLM_PROVIDER = provider.lower()
+        if self.LLM_PROVIDER == "groq":
+            self.GROQ_API_KEY = api_key.strip()
+            self.LLM_API_KEY = api_key.strip()
+            self.LLM_BASE_URL = "https://api.groq.com/openai/v1"
+            self.LLM_MODEL = model.strip() or "llama-3.3-70b-versatile"
+        else:
+            self.LLM_API_KEY = api_key.strip()
+            self.LLM_BASE_URL = "https://api.openai.com/v1"
+            self.LLM_MODEL = model.strip() or "gpt-4o-mini"
     
     @property
     def has_langfuse(self) -> bool:
