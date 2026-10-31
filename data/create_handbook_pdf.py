@@ -167,6 +167,31 @@ def generate_handbook_pdf():
         body_style
     ))
 
+    # SECTION 9: Admissions Process, Eligibility Criteria, and Required Documentation
+    story.append(Paragraph("Section 9: Admissions Process, Eligibility Criteria, and Required Documentation", h1_style))
+    story.append(Paragraph(
+        "<b>Admissions Overview and Procedure:</b> Admission to academic programmes at Apex Institute is conducted through a structured, merit-based selection process. "
+        "The standard admission procedure involves four sequential stages: "
+        "(1) Submission of the Online Application Form via the institutional portal (admissions.apexinstitute.edu) along with the application fee; "
+        "(2) Evaluation of national entrance examination percentiles (e.g., CAT, GMAT, GRE, GATE) or performance in the Apex Institutional Aptitude Test (AIAT); "
+        "(3) Personal Interview (PI) and evaluation of the candidate's Statement of Purpose (SOP) by the Faculty Admissions Panel; and "
+        "(4) Release of the Merit List followed by issuance of Provisional Admission Offer Letters.",
+        body_style
+    ))
+    story.append(Paragraph(
+        "<b>Mandatory Documents Required for Admission:</b> All provisionally admitted candidates must submit verified physical copies and digital scans of the following documents to the Registrar's Office within fifteen (15) calendar days of seat acceptance: "
+        "<br/>1. <b>Academic Certificates:</b> Class 10 and Class 12 passing certificates and consolidated marksheets. "
+        "<br/>2. <b>Graduation Records:</b> Official degree completion certificate and semester-wise transcripts for all undergraduate qualifying examinations (minimum 60% aggregate or 6.5 CGPA required). "
+        "<br/>3. <b>Entrance Exam Scorecard:</b> Valid authenticated scorecard for CAT, GMAT, GRE, GATE, or AIAT. "
+        "<br/>4. <b>Government Photo Identification:</b> Aadhaar Card, Passport, or Voter ID for proof of identity and domestic address. "
+        "<br/>5. <b>Institutional Clearance:</b> Official Transfer Certificate (TC) and Migration Certificate issued by the institution last attended. "
+        "<br/>6. <b>Conduct / Character Certificate:</b> Issued by the Principal, Dean, or Head of Institution last attended. "
+        "<br/>7. <b>Category / Reservation Proof:</b> Valid SC/ST/OBC (Non-Creamy Layer)/EWS certificate issued by a competent revenue authority (if applicable). "
+        "<br/>8. <b>Photographs:</b> Four (4) recent passport-sized photographs with white background. "
+        "<br/><i>Note: Failure to produce original documents for physical verification prior to the semester commencement date will result in cancellation of the provisional admission offer.</i>",
+        body_style
+    ))
+
     doc.build(story)
     print(f"Student Handbook PDF generated successfully at: {pdf_path}")
     return pdf_path

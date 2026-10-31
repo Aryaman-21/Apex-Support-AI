@@ -96,6 +96,20 @@ class MemoryManager:
                     "value": None,
                     "reason": dec.reason,
                 })
+                # Audit log sensitive rejection
+                if "SENSITIVE" in str(dec.key):
+                    try:
+                        from security.audit import log_audit_event
+                        log_audit_event(
+                            actor_username=student_id.lower(),
+                            actor_role="STUDENT",
+                            action="REDACT_SENSITIVE",
+                            target_resource=f"memory:{student_id}",
+                            decision="DENY",
+                            reason=f"Sensitive input blocked from persistent storage: {dec.reason}",
+                        )
+                    except Exception:
+                        pass
 
         return logs
 

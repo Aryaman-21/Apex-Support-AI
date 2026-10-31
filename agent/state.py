@@ -11,6 +11,7 @@ class AgentState(TypedDict):
     trace_id: str
     session_id: str
     student_id: Optional[str]
+    caller_user: Optional[Dict[str, Any]]
     query: str
     conversation_history: List[Dict[str, str]]
 

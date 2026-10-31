@@ -38,6 +38,9 @@ def render_sidebar():
             "📊 Monitoring & Telemetry",
             "🧠 Long-Term Memory",
             "📚 Policy Knowledge Base",
+            "🔐 Login / Profile",
+            "⚖️ Approval Center",
+            "🛡️ Audit Logs",
         ]
         if "selected_page" not in st.session_state:
             st.session_state.selected_page = nav_options[0]
@@ -49,6 +52,21 @@ def render_sidebar():
             label_visibility="collapsed",
         )
         st.session_state.selected_page = selected_nav
+
+        # Authenticated Session Indicator
+        auth_user = st.session_state.get("authenticated_user")
+        if auth_user:
+            role_badge = auth_user.get("role", "STUDENT")
+            st.markdown(
+                f"""
+                <div style="background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 6px; padding: 6px 10px; margin-top: 6px;">
+                    <div style="font-size: 0.7rem; color: #94A3B8;">Authenticated As:</div>
+                    <div style="font-size: 0.82rem; font-weight: 700; color: #F8FAFC;">{auth_user.get('display_name', auth_user.get('username'))}</div>
+                    <div style="font-size: 0.68rem; color: #38BDF8; font-weight: 600;">● {role_badge}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
         st.markdown("<hr style='margin: 12px 0; border-color: rgba(255,255,255,0.08);'/>", unsafe_allow_html=True)
 

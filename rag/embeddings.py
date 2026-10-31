@@ -39,16 +39,6 @@ def get_embedding_function() -> Embeddings:
 
     # Default: Local offline SentenceTransformers
     try:
-        from langchain_community.embeddings import HuggingFaceEmbeddings
-        _cached_embedding_model = HuggingFaceEmbeddings(
-            model_name=settings.EMBEDDING_MODEL,
-            model_kwargs={"device": "cpu"},
-            encode_kwargs={"normalize_embeddings": True},
-        )
-        return _cached_embedding_model
-    except Exception as e:
-        logger.error(f"Failed to load HuggingFaceEmbeddings: {e}", exc_info=True)
-        # Fallback to SentenceTransformer direct wrapper if langchain_community differs
         from sentence_transformers import SentenceTransformer
 
         class DirectSentenceTransformerEmbeddings(Embeddings):
@@ -65,3 +55,6 @@ def get_embedding_function() -> Embeddings:
 
         _cached_embedding_model = DirectSentenceTransformerEmbeddings(settings.EMBEDDING_MODEL)
         return _cached_embedding_model
+    except Exception as e:
+        logger.error(f"Failed to load SentenceTransformer: {e}", exc_info=True)
+        raise

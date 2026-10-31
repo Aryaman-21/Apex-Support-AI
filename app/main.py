@@ -26,6 +26,9 @@ from app.views.chat_view import render_chat_view
 from app.views.monitoring_view import render_monitoring_view
 from app.views.memory_view import render_memory_view
 from app.views.knowledge_view import render_knowledge_view
+from app.views.login_view import render_login_view
+from app.views.approval_view import render_approval_view
+from app.views.audit_view import render_audit_view
 from database.seed import seed_database
 from rag.retriever import build_or_load_vector_store
 
@@ -54,5 +57,11 @@ elif "Memory" in selected_nav:
     render_memory_view()
 elif "Knowledge" in selected_nav:
     render_knowledge_view()
+elif "Login" in selected_nav or "Profile" in selected_nav:
+    render_login_view()
+elif "Approval" in selected_nav:
+    render_approval_view()
+elif "Audit" in selected_nav:
+    render_audit_view()
 else:
     render_chat_view()

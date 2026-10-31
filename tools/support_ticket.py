@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 from langchain_core.tools import tool
 from database.db import get_db_session
 from database.models import SupportTicket, Student
+from security.authz import check_student_owner_access
 
 logger = logging.getLogger("tools.support_ticket")
 
@@ -33,10 +34,10 @@ class SupportTicketInput(BaseModel):
     priority: Optional[str] = Field("Medium", description="Priority level: 'Low', 'Medium', 'High', 'Urgent'")
 
 
-def create_support_ticket(student_id: str, issue_category: str, description: str, priority: str = "Medium") -> Dict[str, Any]:
+def create_support_ticket(student_id: str, issue_category: str, description: str, priority: str = "Medium", caller_user: Any = None) -> Dict[str, Any]:
     """
     Core function to insert a real support ticket into SQLite.
-    Generates a unique reference ID and verifies student record.
+    Generates a unique reference ID, enforces owner isolation, and verifies student record.
     """
     start_time = time.time()
 
@@ -48,6 +49,20 @@ def create_support_ticket(student_id: str, issue_category: str, description: str
             "data": None,
             "latency_ms": round((time.time() - start_time) * 1000, 2),
         }
+
+    clean_id = student_id.strip().upper()
+
+    # Backend Authorization Check (Assignment 2)
+    if caller_user:
+        authorized, reason = check_student_owner_access(caller_user, clean_id, action="CREATE_TICKET", resource_type="ticket")
+        if not authorized:
+            return {
+                "status": "DENIED",
+                "error_type": "ACCESS_DENIED",
+                "message": f"Access Denied: {reason}",
+                "data": None,
+                "latency_ms": round((time.time() - start_time) * 1000, 2),
+            }
 
     if not description or len(description.strip()) < 5:
         return {

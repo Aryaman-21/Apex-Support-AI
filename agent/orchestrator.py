@@ -29,7 +29,7 @@ def route_by_intent(state: AgentState) -> str:
     intent = state.get("intent", "DIRECT_ANSWER")
     if intent in ["TOOL_CALL", "COMPOSITE"]:
         return "tool_executor"
-    elif intent == "RAG_RETRIEVAL":
+    elif intent in ["RAG_RETRIEVAL", "POLICY_QUERY"]:
         return "rag_retriever"
     else:
         return "memory_retriever"
@@ -92,24 +92,35 @@ agent_app = build_agent_graph()
 
 
 def run_agent(
-    query: str,
+    query: Optional[str] = None,
     student_id: Optional[str] = "STU1001",
     session_id: Optional[str] = None,
     conversation_history: Optional[List[Dict[str, str]]] = None,
+    caller_user: Optional[Dict[str, Any]] = None,
+    user_message: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Main execution interface for Streamlit and automated evaluation.
     Invokes the compiled LangGraph workflow and returns complete execution state.
+    Binds authenticated caller_user for owner-based isolation and auditing.
     """
+    active_query = query or user_message or ""
     start_total_time = time.time()
     trace_id = str(uuid.uuid4())
     s_id = session_id or f"sess_{str(uuid.uuid4())[:8]}"
 
+    resolved_student_id = (
+        caller_user.get("student_id")
+        if (caller_user and caller_user.get("role") == "STUDENT" and caller_user.get("student_id"))
+        else (student_id or "STU1001")
+    )
+
     initial_state: AgentState = {
         "trace_id": trace_id,
         "session_id": s_id,
-        "student_id": student_id,
-        "query": query,
+        "student_id": resolved_student_id,
+        "caller_user": caller_user,
+        "query": active_query,
         "conversation_history": conversation_history or [],
         "intent": "DIRECT_ANSWER",
         "decision_reasoning": "",
@@ -127,10 +138,12 @@ def run_agent(
     }
 
     try:
-        logger.info(f"Invoking Agent for query: '{query}' (student: {student_id})")
+        logger.info(f"Invoking Agent for query: '{active_query}' (student: {student_id})")
         final_state = agent_app.invoke(initial_state)
         total_latency = round((time.time() - start_total_time) * 1000, 2)
         final_state["latency_ms"] = total_latency
+        tool_results = final_state.get("tool_results", [])
+        final_state["tool_called"] = tool_results[0].get("tool_name") if tool_results else None
         return final_state
     except Exception as e:
         logger.error(f"Agent orchestration failed: {e}", exc_info=True)

@@ -189,3 +189,97 @@ class ConversationLog(Base):
             "error_message": self.error_message,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
+
+
+class UserCredential(Base):
+    __tablename__ = "user_credentials"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String(64), unique=True, nullable=False, index=True)
+    password_hash = Column(String(256), nullable=False)
+    salt = Column(String(64), nullable=False)
+    role = Column(String(32), nullable=False, default="STUDENT")  # STUDENT, SUPPORT_STAFF, ADMINISTRATOR
+    student_id = Column(String(32), ForeignKey("students.student_id"), nullable=True, index=True)
+    display_name = Column(String(100), nullable=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    student = relationship("Student", backref="user_credential")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "username": self.username,
+            "role": self.role,
+            "student_id": self.student_id,
+            "display_name": self.display_name,
+            "is_active": self.is_active,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class ApprovalRequest(Base):
+    __tablename__ = "approval_requests"
+
+    request_id = Column(String(64), primary_key=True, index=True)
+    student_id = Column(String(32), ForeignKey("students.student_id"), nullable=False, index=True)
+    action_type = Column(String(64), nullable=False)  # e.g. COURSE_CHANGE, PROFILE_CORRECTION
+    current_value = Column(String(255), nullable=True)
+    requested_value = Column(String(255), nullable=False)
+    reason = Column(Text, nullable=True)
+    status = Column(String(32), default="PENDING", index=True)  # PENDING, APPROVED, REJECTED, EXECUTED
+    reviewer_id = Column(String(64), nullable=True)
+    reviewer_notes = Column(Text, nullable=True)
+    reviewed_at = Column(DateTime, nullable=True)
+    executed_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    student = relationship("Student", backref="approval_requests")
+
+    def to_dict(self):
+        return {
+            "request_id": self.request_id,
+            "student_id": self.student_id,
+            "action_type": self.action_type,
+            "current_value": self.current_value,
+            "requested_value": self.requested_value,
+            "reason": self.reason,
+            "status": self.status,
+            "reviewer_id": self.reviewer_id,
+            "reviewer_notes": self.reviewer_notes,
+            "reviewed_at": self.reviewed_at.isoformat() if self.reviewed_at else None,
+            "executed_at": self.executed_at.isoformat() if self.executed_at else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    event_id = Column(String(64), index=True, default=lambda: str(uuid.uuid4()))
+    actor_username = Column(String(64), nullable=False, index=True)
+    actor_role = Column(String(32), nullable=False)
+    action = Column(String(64), nullable=False, index=True)  # READ_RECORD, READ_FEE, READ_SCHOLARSHIP, CREATE_TICKET, REQUEST_CHANGE, APPROVE_ACTION, REJECT_ACTION, REDACT_SENSITIVE
+    target_resource = Column(String(128), nullable=True)  # e.g. student:STU1001, fee:STU1001
+    decision = Column(String(32), nullable=False)  # ALLOW, DENY, PENDING, EXECUTED
+    reason = Column(String(255), nullable=True)
+    details = Column(Text, nullable=True)
+    ip_address = Column(String(64), default="127.0.0.1")
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "event_id": self.event_id,
+            "actor_username": self.actor_username,
+            "actor_role": self.actor_role,
+            "action": self.action,
+            "target_resource": self.target_resource,
+            "decision": self.decision,
+            "reason": self.reason,
+            "details": self.details,
+            "ip_address": self.ip_address,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+

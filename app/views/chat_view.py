@@ -21,12 +21,24 @@ def execute_agent_with_live_status(prompt_text: str, student_id: str):
         st.write("🔍 **Step 1:** Analyzing student query intent & academic context...")
         time.sleep(0.08)
 
+        # Resolve caller_user from authenticated session or active profile
+        caller_user = st.session_state.get("authenticated_user")
+        if not caller_user:
+            active_s = st.session_state.get("active_student", {})
+            caller_user = {
+                "username": (student_id or "stu1001").lower(),
+                "role": "STUDENT",
+                "student_id": student_id or "STU1001",
+                "display_name": active_s.get("name", "Student"),
+            }
+
         # Run the full LangGraph orchestrator
         agent_result = run_agent(
             query=prompt_text,
             student_id=student_id,
             session_id=st.session_state.session_id,
             conversation_history=st.session_state.messages[:-1],
+            caller_user=caller_user,
         )
 
         intent = agent_result.get("intent", "DIRECT_ANSWER")
@@ -91,6 +103,23 @@ def render_chat_view():
     student_prog = active_student.get("programme", "Degree Programme")
     student_dept = active_student.get("department", "Department")
 
+    # Look up if student has an active preferred name in persistent memory
+    preferred_name = ""
+    try:
+        from memory.memory_manager import retrieve_relevant_memories
+        mem_lookup = retrieve_relevant_memories(student_id, "preferred name")
+        for m in mem_lookup.get("memories", []):
+            if m.get("memory_key") == "preferred_name":
+                preferred_name = m.get("memory_value", "")
+                break
+    except Exception:
+        pass
+
+    display_name_html = f"<b>{student_name}</b>"
+    if preferred_name and preferred_name.lower() != student_name.lower():
+        display_name_html += f" (Preferred: <i>{preferred_name}</i>)"
+    display_greeting = preferred_name if preferred_name else student_name.split()[0]
+
     # Header
     st.markdown('<div class="enterprise-badge">● Autonomous Multi-Tool Agent</div>', unsafe_allow_html=True)
     st.markdown(
@@ -101,7 +130,7 @@ def render_chat_view():
                     Student Support Concierge
                 </h1>
                 <p style="font-size: 0.88rem; color: #94A3B8; margin: 4px 0 0 0;">
-                    Connected for <b>{student_name}</b> ({student_id}) • {student_prog} • {student_dept}
+                    Connected for {display_name_html} ({student_id}) <span style="font-size: 0.72rem; background: rgba(59,130,246,0.2); color: #93C5FD; padding: 1px 6px; border-radius: 4px;">Demo Persona</span> • {student_prog} • {student_dept}
                 </p>
             </div>
             <div>
@@ -121,10 +150,10 @@ def render_chat_view():
             <div class="glass-card" style="border-left: 4px solid #3B82F6;">
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
                     <div style="font-weight: 700; font-size: 1.15rem; color: #F1F5F9;">
-                        Welcome back, {student_name.split()[0]}! How can I help you today?
+                        Welcome back, {display_greeting}! How can I help you today?
                     </div>
                     <span style="font-size: 0.75rem; background: rgba(59, 130, 246, 0.15); color: #93C5FD; padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(59, 130, 246, 0.3);">
-                        Student ID: {student_id}
+                        Student ID: {student_id} [Demo]
                     </span>
                 </div>
                 <div style="font-size: 0.88rem; color: #CBD5E1; line-height: 1.55; margin-bottom: 14px;">

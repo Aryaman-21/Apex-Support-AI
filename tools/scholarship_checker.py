@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 from langchain_core.tools import tool
 from database.db import get_db_session
 from database.models import Scholarship, Student
+from security.authz import check_student_owner_access
 
 logger = logging.getLogger("tools.scholarship_checker")
 
@@ -18,10 +19,10 @@ class ScholarshipCheckerInput(BaseModel):
     student_id: str = Field(..., description="Unique alphanumeric student ID, e.g., 'STU1001'")
 
 
-def check_scholarship_status(student_id: str) -> Dict[str, Any]:
+def check_scholarship_status(student_id: str, caller_user: Any = None) -> Dict[str, Any]:
     """
     Core function to retrieve scholarship information for a student.
-    Validates input and checks SQLite records.
+    Validates input, enforces owner-based isolation, and checks SQLite records.
     """
     start_time = time.time()
     if not student_id or not isinstance(student_id, str):
@@ -34,6 +35,18 @@ def check_scholarship_status(student_id: str) -> Dict[str, Any]:
         }
 
     clean_id = student_id.strip().upper()
+
+    # Backend Authorization Check (Assignment 2)
+    if caller_user:
+        authorized, reason = check_student_owner_access(caller_user, clean_id, action="READ_SCHOLARSHIP", resource_type="scholarship")
+        if not authorized:
+            return {
+                "status": "DENIED",
+                "error_type": "ACCESS_DENIED",
+                "message": f"Access Denied: {reason}",
+                "data": None,
+                "latency_ms": round((time.time() - start_time) * 1000, 2),
+            }
 
     try:
         with get_db_session() as session:
@@ -69,6 +82,7 @@ def check_scholarship_status(student_id: str) -> Dict[str, Any]:
             logger.info(f"Scholarship status checked for {clean_id}: {data['scholarship_name']} ({data['application_status']}).")
             return {
                 "status": "SUCCESS",
+                "student_id": clean_id,
                 "message": f"Scholarship '{data['scholarship_name']}' is currently {data['application_status']}.",
                 "data": data,
                 "latency_ms": round((time.time() - start_time) * 1000, 2),

@@ -16,7 +16,7 @@ engine = create_engine(
     echo=False,
 )
 
-SessionLocal = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine))
+SessionLocal = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine, expire_on_commit=False))
 
 
 def init_db():

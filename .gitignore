@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 *.so
 .Python
+.pytest_cache/
 env/
 venv/
 ENV/
@@ -16,15 +17,21 @@ dist/
 
 # Environments & Keys
 .env
+.env.*
+!.env.example
 *.env.local
 
 # Database & Runtime Data
 *.db
+*.sqlite
 *.sqlite3
+data/*.db
+data/student_support.db
 data/vector_store/
-data/logs/*.jsonl
-data/logs/*.log
-evaluation/results/*.csv
+data/logs/
+*.log
+scratch/
+evaluation/results/
 
 # Streamlit
 .streamlit/secrets.toml
