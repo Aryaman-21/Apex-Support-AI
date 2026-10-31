@@ -1,7 +1,7 @@
 """
 Enterprise CSS Stylesheet for Streamlit Frontend.
 Provides dark mode styling, glassmorphism cards, modern typography,
-custom chat bubble styles, and badges.
+responsive layouts for laptop, tablet, and mobile, and clean sidebar controls.
 """
 
 import streamlit as st
@@ -21,11 +21,19 @@ def apply_enterprise_styles():
         font-family: 'JetBrains Mono', monospace !important;
     }
 
-    /* Main Container Padding */
+    /* Completely hide Streamlit default page navigation to prevent duplicate menus */
+    [data-testid="stSidebarNav"] {
+        display: none !important;
+    }
+    div[data-testid="stSidebarNavItems"] {
+        display: none !important;
+    }
+
+    /* Main Container Responsiveness */
     .block-container {
-        padding-top: 1.5rem !important;
+        padding-top: 1.2rem !important;
         padding-bottom: 2.5rem !important;
-        max-width: 1250px;
+        max-width: 1280px;
     }
 
     /* Top Header Badge */
@@ -41,7 +49,7 @@ def apply_enterprise_styles():
         font-weight: 600;
         color: #60A5FA;
         letter-spacing: 0.03em;
-        margin-bottom: 12px;
+        margin-bottom: 10px;
         text-transform: uppercase;
     }
 
@@ -56,95 +64,89 @@ def apply_enterprise_styles():
         transition: transform 0.2s ease, border-color 0.2s ease;
     }
     .glass-card:hover {
-        border-color: rgba(96, 165, 250, 0.3);
+        border-color: rgba(96, 165, 250, 0.35);
     }
 
     /* Metric Stat Card */
     .stat-card {
         background: linear-gradient(145deg, #131B2E 0%, #0B1120 100%);
-        border: 1px solid rgba(255, 255, 255, 0.07);
+        border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 10px;
-        padding: 1rem 1.2rem;
+        padding: 1rem 1.1rem;
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 3px;
+        min-height: 85px;
     }
     .stat-label {
-        font-size: 0.75rem;
+        font-size: 0.73rem;
         color: #94A3B8;
         font-weight: 500;
         text-transform: uppercase;
         letter-spacing: 0.05em;
     }
     .stat-value {
-        font-size: 1.6rem;
+        font-size: 1.55rem;
         font-weight: 700;
         color: #F8FAFC;
+        line-height: 1.2;
     }
     .stat-subtitle {
-        font-size: 0.75rem;
+        font-size: 0.73rem;
         color: #10B981;
     }
 
-    /* Quick Suggestion Chips */
-    .suggestion-btn {
-        background: rgba(30, 41, 59, 0.8);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 8px;
-        padding: 8px 12px;
-        font-size: 0.85rem;
-        color: #E2E8F0;
-        text-align: left;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        margin-bottom: 6px;
+    /* Operational Status Pills */
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 10px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-right: 6px;
+        margin-bottom: 4px;
     }
-    .suggestion-btn:hover {
+    .status-tool-success {
+        background: rgba(16, 185, 129, 0.15);
+        border: 1px solid rgba(16, 185, 129, 0.35);
+        color: #34D399;
+    }
+    .status-tool-fail {
+        background: rgba(239, 68, 68, 0.15);
+        border: 1px solid rgba(239, 68, 68, 0.35);
+        color: #F87171;
+    }
+    .status-rag {
         background: rgba(59, 130, 246, 0.15);
-        border-color: #3B82F6;
-        color: #93C5FD;
+        border: 1px solid rgba(59, 130, 246, 0.35);
+        color: #60A5FA;
+    }
+    .status-memory {
+        background: rgba(168, 85, 247, 0.15);
+        border: 1px solid rgba(168, 85, 247, 0.35);
+        color: #C084FC;
     }
 
-    /* Trace Detail Box */
+    /* Quick Suggestion Action Chips */
+    .quick-chip-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 8px;
+        margin-top: 10px;
+    }
+
+    /* Trace Details Container */
     .trace-box {
         background: #090D16;
-        border: 1px solid rgba(255, 255, 255, 0.07);
+        border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 8px;
         padding: 10px 14px;
         font-size: 0.82rem;
         line-height: 1.5;
         margin-top: 8px;
         color: #CBD5E1;
-    }
-
-    /* Tag Badges */
-    .tag-pill {
-        display: inline-block;
-        padding: 2px 8px;
-        border-radius: 4px;
-        font-size: 0.72rem;
-        font-weight: 600;
-        margin-right: 6px;
-    }
-    .tag-tool {
-        background: rgba(245, 158, 11, 0.15);
-        color: #FBBF24;
-        border: 1px solid rgba(245, 158, 11, 0.3);
-    }
-    .tag-rag {
-        background: rgba(16, 185, 129, 0.15);
-        color: #34D399;
-        border: 1px solid rgba(16, 185, 129, 0.3);
-    }
-    .tag-memory {
-        background: rgba(168, 85, 247, 0.15);
-        color: #C084FC;
-        border: 1px solid rgba(168, 85, 247, 0.3);
-    }
-    .tag-direct {
-        background: rgba(59, 130, 246, 0.15);
-        color: #60A5FA;
-        border: 1px solid rgba(59, 130, 246, 0.3);
     }
 
     /* Sidebar Clean Styling */
@@ -158,8 +160,43 @@ def apply_enterprise_styles():
         font-size: 0.85rem !important;
         font-weight: 600 !important;
         color: #94A3B8 !important;
-        background: rgba(15, 23, 42, 0.4) !important;
+        background: rgba(15, 23, 42, 0.5) !important;
+        border: 1px solid rgba(255, 255, 255, 0.06) !important;
         border-radius: 6px !important;
+    }
+
+    /* Chat Messages Enhancement */
+    [data-testid="stChatMessage"] {
+        background: rgba(15, 23, 42, 0.35);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        margin-bottom: 0.75rem;
+        padding: 0.9rem;
+    }
+
+    /* Tablet & Mobile Responsiveness */
+    @media (max-width: 900px) {
+        .block-container {
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+        }
+        .stat-value {
+            font-size: 1.3rem !important;
+        }
+        .quick-chip-container {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 600px) {
+        .stat-card {
+            padding: 0.75rem;
+            min-height: auto;
+        }
+        .enterprise-badge {
+            font-size: 0.7rem;
+            padding: 2px 10px;
+        }
     }
 
     /* Custom Scrollbars */

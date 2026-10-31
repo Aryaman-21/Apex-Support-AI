@@ -203,13 +203,13 @@ def memory_retrieval_node(state: AgentState) -> Dict[str, Any]:
     student_id = state.get("student_id") or "STU1001"
 
     # 1. Process and store any new non-sensitive memories mentioned in the query
-    MemoryManager.process_and_store_from_query(student_id, query)
+    storage_logs = MemoryManager.process_and_store_from_query(student_id, query)
 
     # 2. Selectively retrieve existing memories relevant to the query
     mem_result = retrieve_relevant_memories(student_id, query)
     memories = mem_result.get("memories", [])
     logger.info(f"Memory lookup: retrieved {len(memories)} relevant items for student {student_id}.")
-    return {"memories": memories}
+    return {"memories": memories, "memory_storage_logs": storage_logs}
 
 
 def context_selector_node(state: AgentState) -> Dict[str, Any]:

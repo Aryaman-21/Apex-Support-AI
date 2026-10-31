@@ -117,6 +117,7 @@ def run_agent(
         "tool_results": [],
         "rag_chunks": [],
         "memories": [],
+        "memory_storage_logs": [],
         "selected_context": {},
         "final_response": "",
         "token_usage": {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0},

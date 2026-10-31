@@ -23,6 +23,7 @@ class AgentState(TypedDict):
     tool_results: List[Dict[str, Any]]
     rag_chunks: List[Dict[str, Any]]
     memories: List[Dict[str, Any]]
+    memory_storage_logs: List[Dict[str, Any]]
     
     # Context Selection (audit of selected components)
     selected_context: Dict[str, Any]
